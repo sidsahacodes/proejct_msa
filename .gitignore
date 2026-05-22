@@ -2,3 +2,6 @@ CLAUDE.md
 group_project_instructions.pdf
 datasets/
 .DS_Store
+*.aux
+*.log
+*.out

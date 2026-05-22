@@ -1,0 +1,68 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[top=1in,bottom=1in,left=1in,right=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+\usepackage{parskip}
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{0pt}
+
+% ── Python listing style ─────────────────────────────────────────────────────
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codeframe}{RGB}{200,200,200}
+\definecolor{kwcolor}{RGB}{0,0,160}
+\definecolor{strcolor}{RGB}{160,0,0}
+\definecolor{cmtcolor}{RGB}{80,120,80}
+\definecolor{numcolor}{RGB}{0,100,0}
+
+\lstdefinestyle{python}{
+  language=Python,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{codeframe},
+  basicstyle=\ttfamily\fontsize{7.5}{9}\selectfont,
+  keywordstyle=\color{kwcolor}\bfseries,
+  stringstyle=\color{strcolor},
+  commentstyle=\color{cmtcolor}\itshape,
+  numberstyle=\tiny\color{gray},
+  numbers=left,
+  numbersep=6pt,
+  stepnumber=5,
+  showstringspaces=false,
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=4,
+  keepspaces=true,
+  columns=flexible,
+  upquote=true,
+  morekeywords={True,False,None,as,with,yield,lambda},
+}
+\lstset{style=python}
+
+\begin{document}
+
+\begin{center}
+  {\large\bfseries Code Appendix}\\[6pt]
+  Multivariate Structure and Prediction in the Communities and Crime Dataset\\[3pt]
+  {\small Sidharth Saha \quad Shen-Ching Feng \quad Beckham Wee \quad Joe Wang}\\[3pt]
+  {\small STAT\,32950 / STAT\,24620 / FINM\,34700 \quad Spring 2026}
+\end{center}
+\vspace{2pt}\hrule\vspace{8pt}
+
+All analysis was implemented in Python~3 using \texttt{pandas}, \texttt{numpy},
+\texttt{matplotlib}, \texttt{seaborn}, and \texttt{scikit-learn}.
+The notebook \texttt{communities\_crime\_report\_outline.ipynb} contains the
+full executed analysis including all cell outputs and figures.
+The listing below presents the complete analysis code extracted from the notebook,
+organised by section. AI tools were used for coding assistance and grammar
+polishing; all analysis design, interpretation, and written explanations are
+the work of the authors.
+
+\bigskip
+\lstinputlisting{code_appendix.py}
+
+\end{document}
