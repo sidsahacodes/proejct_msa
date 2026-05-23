@@ -135,23 +135,27 @@ plt.close()
 print("fig_clusters.pdf saved")
 
 # ── Classification & ROC curves ───────────────────────────────────────────────
-X_fa = X_scaled.copy()
-fa = FactorAnalysis(n_components=7, rotation="varimax", random_state=0)
-fa.fit(X_fa)
-factor_scores = pd.DataFrame(
-    fa.transform(X_fa),
-    index=X_fa.index,
-    columns=[f"Factor{k+1}" for k in range(7)]
+# Supervised pipeline: split first on the RAW predictors, then fit scaler,
+# PCA, and factor analysis on the training rows only and apply (not refit)
+# to the held-out test rows.
+y = (df["HighViolentCrime"] == "High").astype(int)
+X_train_raw, X_test_raw, y_train, y_test = train_test_split(
+    X, y, test_size=0.30, random_state=42, stratify=y
 )
 
-y = (df["HighViolentCrime"] == "High").astype(int)
-train_idx, test_idx = train_test_split(df.index, test_size=0.30, random_state=42, stratify=y)
-y_train, y_test = y.loc[train_idx], y.loc[test_idx]
+sup_scaler = StandardScaler().fit(X_train_raw)
+Xo_tr = pd.DataFrame(sup_scaler.transform(X_train_raw), index=X_train_raw.index, columns=X.columns)
+Xo_te = pd.DataFrame(sup_scaler.transform(X_test_raw),  index=X_test_raw.index,  columns=X.columns)
 
-Xo_tr, Xo_te = X_scaled.loc[train_idx], X_scaled.loc[test_idx]
-Xp_tr = pca_scores_df.iloc[:, :pcs_for_80].loc[train_idx]
-Xp_te = pca_scores_df.iloc[:, :pcs_for_80].loc[test_idx]
-Xf_tr, Xf_te = factor_scores.loc[train_idx], factor_scores.loc[test_idx]
+sup_pca = PCA().fit(Xo_tr)
+Xp_tr = pd.DataFrame(sup_pca.transform(Xo_tr)[:, :pcs_for_80], index=Xo_tr.index)
+Xp_te = pd.DataFrame(sup_pca.transform(Xo_te)[:, :pcs_for_80], index=Xo_te.index)
+
+sup_fa = FactorAnalysis(n_components=7, rotation="varimax", random_state=0).fit(Xo_tr)
+Xf_tr = pd.DataFrame(sup_fa.transform(Xo_tr), index=Xo_tr.index,
+                     columns=[f"Factor{k+1}" for k in range(7)])
+Xf_te = pd.DataFrame(sup_fa.transform(Xo_te), index=Xo_te.index,
+                     columns=[f"Factor{k+1}" for k in range(7)])
 
 def fit_eval(name, model, X_tr, X_te):
     model.fit(X_tr, y_train)

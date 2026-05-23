@@ -934,38 +934,70 @@ plt.show()
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA, FactorAnalysis
 
 # Binary outcome
 y = (df["HighViolentCrime"] == "High").astype(int)
 
-# Input 1: original standardized predictors
-X_original = X_scaled.copy()
-
-# Input 2: retained PCA scores
-X_pca_classification = pca_scores_df.iloc[:, :pcs_for_80].copy()
-
-# Input 3: factor scores from final factor model
-X_factor_classification = final_scores.copy()
-
-# Train/test split using same indices for all inputs
-train_idx, test_idx = train_test_split(
-    df.index,
+# Split first on the RAW predictor matrix so that scaling, PCA, and factor
+# analysis used as supervised feature transforms are estimated only from
+# training rows and applied (not refit) to the held-out test rows.
+X_train_raw, X_test_raw, y_train, y_test = train_test_split(
+    X,
+    y,
     test_size=0.30,
     random_state=42,
     stratify=y
 )
 
-X_original_train = X_original.loc[train_idx]
-X_original_test = X_original.loc[test_idx]
+train_idx = X_train_raw.index
+test_idx = X_test_raw.index
 
-X_pca_train = X_pca_classification.loc[train_idx]
-X_pca_test = X_pca_classification.loc[test_idx]
+# Input 1: standardize on the training rows, apply to both
+sup_scaler = StandardScaler().fit(X_train_raw)
 
-X_factor_train = X_factor_classification.loc[train_idx]
-X_factor_test = X_factor_classification.loc[test_idx]
+X_original_train = pd.DataFrame(
+    sup_scaler.transform(X_train_raw),
+    index=X_train_raw.index,
+    columns=X.columns
+)
+X_original_test = pd.DataFrame(
+    sup_scaler.transform(X_test_raw),
+    index=X_test_raw.index,
+    columns=X.columns
+)
 
-y_train = y.loc[train_idx]
-y_test = y.loc[test_idx]
+# Input 2: PCA fit on the training scaled data; first pcs_for_80 components retained
+sup_pca = PCA().fit(X_original_train)
+
+X_pca_train = pd.DataFrame(
+    sup_pca.transform(X_original_train)[:, :pcs_for_80],
+    index=X_original_train.index,
+    columns=[f"PC{i+1}" for i in range(pcs_for_80)]
+)
+X_pca_test = pd.DataFrame(
+    sup_pca.transform(X_original_test)[:, :pcs_for_80],
+    index=X_original_test.index,
+    columns=[f"PC{i+1}" for i in range(pcs_for_80)]
+)
+
+# Input 3: factor analysis fit on the training scaled data
+sup_fa = FactorAnalysis(
+    n_components=final_n_factors,
+    rotation="varimax",
+    random_state=0
+).fit(X_original_train)
+
+X_factor_train = pd.DataFrame(
+    sup_fa.transform(X_original_train),
+    index=X_original_train.index,
+    columns=[f"Factor{k+1}" for k in range(final_n_factors)]
+)
+X_factor_test = pd.DataFrame(
+    sup_fa.transform(X_original_test),
+    index=X_original_test.index,
+    columns=[f"Factor{k+1}" for k in range(final_n_factors)]
+)
 
 classification_setup = pd.DataFrame({
     "Input": [
